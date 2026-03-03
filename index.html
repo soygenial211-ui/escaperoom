@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMA CRÍTICO - 180s</title>
+    <style>
+        :root {
+            --neon-green: #00ff88;
+            --neon-red: #ff3e3e;
+            --bg: #0d1117;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg);
+            color: #c9d1d9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            transition: background 1s;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: #161b22;
+            padding: 30px;
+            border: 2px solid #30363d;
+            border-radius: 10px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* RELOJ DE ARENA CSS */
+        .hourglass-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .hourglass {
+            width: 40px;
+            height: 70px;
+            border: 3px solid var(--neon-green);
+            position: relative;
+            clip-path: polygon(0% 0%, 100% 0%, 55% 50%, 100% 100%, 0% 100%, 45% 50%);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .sand {
+            position: absolute;
+            width: 100%;
+            background: var(--neon-green);
+            bottom: 0;
+            left: 0;
+            transition: height 0.5s linear;
+        }
+
+        #timer-text {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--neon-green);
+            margin-top: 10px;
+        }
+
+        .clue-banner {
+            background: #000;
+            padding: 10px;
+            border-left: 4px solid var(--neon-red);
+            margin: 20px 0;
+            font-size: 0.85rem;
+        }
+
+        .grid-asignaturas {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        button {
+            background: #21262d;
+            color: white;
+            border: 1px solid #30363d;
+            padding: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        button:hover:not(:disabled) { border-color: var(--neon-green); color: var(--neon-green); }
+        button:disabled { opacity: 0.4; color: var(--neon-green); border-color: var(--neon-green); }
+
+        #modulo-pregunta {
+            display: none;
+            background: #000;
+            padding: 20px;
+            border: 1px solid var(--neon-green);
+            margin: 20px 0;
+        }
+
+        input {
+            background: #000;
+            border: 1px solid #30363d;
+            color: white;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        /* EFECTO QUEMADO */
+        #burn-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: black;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .burn-animation {
+            animation: burnEffect 2s forwards;
+        }
+
+        @keyframes burnEffect {
+            0% { opacity: 0; background: radial-gradient(circle, #ff4500 0%, #000 100%); }
+            50% { opacity: 1; background: #ff4500; filter: blur(10px); }
+            100% { opacity: 1; background: #000; }
+        }
+
+        .penalty { color: var(--neon-red); font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+<div id="burn-overlay">
+    <h1 style="color: var(--neon-red); font-size: 3rem;">SISTEMA DESTRUIDO</h1>
+    <button onclick="location.reload()" style="background: var(--neon-red);">REINTENTAR</button>
+</div>
+
+<div class="container" id="main-ui">
+    <div class="hourglass-container">
+        <div class="hourglass">
+            <div id="sand-level" class="sand" style="height: 100%;"></div>
+        </div>
+        <div id="timer-text">180s</div>
+    </div>
+
+    <div class="clue-banner">
+        ORDEN: Deportes ➔ Arte ➔ Geografía ➔ Ciencias ➔ Historia.
+    </div>
+
+    <div class="grid-asignaturas" id="botones-area">
+        <button onclick="lanzarPregunta('DEPORTES')" id="btn-DEPORTES">DEPORTES</button>
+        <button onclick="lanzarPregunta('ARTE')" id="btn-ARTE">ARTE</button>
+        <button onclick="lanzarPregunta('GEOGRAFIA')" id="btn-GEOGRAFIA">GEOGRAFÍA</button>
+        <button onclick="lanzarPregunta('CIENCIAS')" id="btn-CIENCIAS">CIENCIAS</button>
+        <button onclick="lanzarPregunta('HISTORIA')" id="btn-HISTORIA">HISTORIA</button>
+    </div>
+
+    <div id="modulo-pregunta">
+        <p id="texto-pregunta"></p>
+        <input type="text" id="input-respuesta" placeholder="Respuesta...">
+        <button onclick="validarRespuesta()" style="width: 100%;">VALIDAR</button>
+        <p id="msg-pregunta"></p>
+    </div>
+
+    <div style="margin-top: 30px; text-align: center; border-top: 1px solid #333; padding-top: 20px;">
+        <h3>CÓDIGO MAESTRO (<span id="intentos-txt">3</span> INTENTOS)</h3>
+        <input type="text" id="input-master" maxlength="10" placeholder="XXXXXXXXXX">
+        <button onclick="finalizarJuego()" style="background: var(--neon-green); color: black; font-weight: bold; width: 100%;">DESBLOQUEAR</button>
+    </div>
+</div>
+
+<script>
+    let tiempo = 180;
+    let intentosMaster = 3;
+    let timerInterval;
+    let catActual = "", rtaCorrecta = "", digitoActual = "";
+
+    const banco = {
+        DEPORTES: [{q: "¿Cuántos minutos dura un partido de fútbol?", a: "noventa", d: "10"}],
+        ARTE: [{q: "¿Quién pintó la 'Mona Lisa'?", a: "davinci", d: "22"}],
+        GEOGRAFIA: [{q: "¿Capital de Alemania?", a: "berlin", d: "38"}],
+        CIENCIAS: [{q: "¿Símbolo del Oxígeno?", a: "o", d: "45"}],
+        HISTORIA: [{q: "¿En qué año terminó la 2da Guerra Mundial?", a: "1945", d: "50"}]
+    };
+
+    function updateTimer() {
+        if(tiempo <= 0) {
+            tiempo = 0;
+            gameover();
+        }
+        document.getElementById('timer-text').innerText = Math.ceil(tiempo) + "s";
+        const porcentaje = (tiempo / 180) * 100;
+        document.getElementById('sand-level').style.height = porcentaje + "%";
+        
+        if(tiempo < 30) {
+            document.getElementById('timer-text').style.color = "var(--neon-red)";
+            document.getElementById('sand-level').style.background = "var(--neon-red)";
+        }
+    }
+
+    timerInterval = setInterval(() => {
+        tiempo -= 1;
+        updateTimer();
+    }, 1000);
+
+    function lanzarPregunta(cat) {
+        tiempo -= 2; // Penalización por abrir pregunta
+        updateTimer();
+        
+        catActual = cat;
+        const qData = banco[cat][0];
+        document.getElementById('modulo-pregunta').style.display = 'block';
+        document.getElementById('texto-pregunta').innerText = qData.q;
+        rtaCorrecta = qData.a;
+        digitoActual = qData.d;
+        document.getElementById('msg-pregunta').innerText = "Penalización: -2s por consulta";
+    }
+
+    function validarRespuesta() {
+        const val = document.getElementById('input-respuesta').value.toLowerCase().trim();
+        if(val === rtaCorrecta) {
+            document.getElementById('btn-' + catActual).disabled = true;
+            document.getElementById('btn-' + catActual).innerText = digitoActual;
+            document.getElementById('modulo-pregunta').style.display = 'none';
+        } else {
+            tiempo -= 10; // Penalización error
+            updateTimer();
+            document.getElementById('msg-pregunta').innerHTML = "<span style='color:red'>ERROR: -10s</span>";
+        }
+    }
+
+    function finalizarJuego() {
+        const code = document.getElementById('input-master').value;
+        if(code === "1022384550") {
+            clearInterval(timerInterval);
+            alert("¡ACCESO TOTAL! Has salvado el sistema.");
+        } else {
+            intentosMaster--;
+            tiempo -= 20;
+            updateTimer();
+            document.getElementById('intentos-txt').innerText = intentosMaster;
+            if(intentosMaster <= 0) gameover();
+            else alert("CÓDIGO ERRÓNEO. Penalización: -20s");
+        }
+    }
+
+    function gameover() {
+        clearInterval(timerInterval);
+        document.getElementById('burn-overlay').classList.add('burn-animation');
+        document.getElementById('main-ui').style.display = 'none';
+    }
+</script>
+</body>
+</html>
